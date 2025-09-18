@@ -112,13 +112,6 @@ async function participantsAdd(interaction: ChatInputCommandInteraction) {
     robloxUsername: name,
   });
 
-  console.log({
-    discordId: discordUser.id,
-    robloxId: robloxUser.id,
-    robloxDisplayName: displayName,
-    robloxUsername: name,
-  });
-
   participant
     .save()
     .then(() => {
@@ -177,9 +170,9 @@ async function participantsClearEliminated(
         } from the tournament.`,
       });
       sendLog({
-        content: `<@${interaction.user.id}> cleared <@${
+        content: `<@${interaction.user.id}> cleared ${
           result.deletedCount
-        }> eliminated ${
+        } eliminated ${
           result.deletedCount === 1 ? "player" : "players"
         } from the tournament.`,
       });
