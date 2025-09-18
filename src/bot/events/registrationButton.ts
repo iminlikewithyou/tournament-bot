@@ -9,7 +9,7 @@ import { sendLog } from "../sendLog.js";
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton()) return;
   if (interaction.customId !== "register") return;
-  interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   if ((await getRegistrationMessage())?.type !== "open") {
     interaction.editReply({
