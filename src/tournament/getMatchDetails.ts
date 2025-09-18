@@ -14,10 +14,13 @@ export async function getMatchDetails(match: Match) {
   const result = {
     participants,
     participantsPlayingWrongMatch,
-    ignore: participants.length === 0,
+    ignore: false,
     allPlayersAreParticipants: participants.length === match.players.length,
     invalid: undefined as string | undefined,
   };
+
+  if (participants.length === 0) result.ignore = true;
+  if (participantsPlayingWrongMatch.length === 0) result.ignore = true;
 
   if (result.ignore) return result;
 
@@ -27,15 +30,15 @@ export async function getMatchDetails(match: Match) {
     return result;
   }
   if (match.dictionary !== "english") {
-    result.invalid = "Dictionary is not English.";
+    result.invalid = "Dictionary is not set to English.";
     return result;
   }
   if (match.gameMode !== "default") {
-    result.invalid = "Game mode is not Default.";
+    result.invalid = "Game mode is not set to default.";
     return result;
   }
   if (match.generationType !== "waterfall") {
-    result.invalid = "Generation type is not Waterfall.";
+    result.invalid = "Generation type is not set to Waterfall.";
     return result;
   }
   if (match.players.length !== 2) {
