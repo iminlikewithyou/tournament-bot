@@ -7,7 +7,7 @@ export type ParticipantStatus =
   | "won match"
   | "eliminated";
 
-export interface Participant {
+export interface IParticipant {
   robloxId: number;
   robloxUsername: string;
   robloxDisplayName: string;
@@ -15,7 +15,7 @@ export interface Participant {
   status: ParticipantStatus;
 }
 
-const ParticipantSchema = new Schema<Participant>({
+const ParticipantSchema = new Schema<IParticipant>({
   robloxId: { type: Number, required: true, unique: true, index: true },
   robloxUsername: { type: String, required: true },
   robloxDisplayName: { type: String, required: true },
@@ -28,7 +28,7 @@ const ParticipantSchema = new Schema<Participant>({
   },
 });
 
-const Participant = mongoose.model<Participant>(
+const Participant = mongoose.model<IParticipant>(
   "Participant",
   ParticipantSchema
 );
