@@ -24,6 +24,7 @@ export const config = {
     guildId: getRequiredEnv("DISCORD_GUILD_ID"),
     appId: getRequiredEnv("DISCORD_APP_ID"),
     gameLogChannel: getRequiredEnv("DISCORD_GAME_LOG_CHANNEL"),
+    registrationChannel: getRequiredEnv("DISCORD_REGISTRATION_CHANNEL"),
   },
   roblosecurity: process.env.ROBLOSECURITY,
   bloxlinkKey: getRequiredEnv("BLOXLINK_KEY"),
