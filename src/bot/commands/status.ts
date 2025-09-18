@@ -5,6 +5,7 @@ import {
 } from "discord.js";
 import Participant, { ParticipantStatus } from "../../models/Participant.js";
 import { client } from "../client.js";
+import { sendLog } from "../sendLog.js";
 
 export const data = new SlashCommandBuilder()
   .setName("status")
@@ -88,6 +89,9 @@ async function statusSet(interaction: ChatInputCommandInteraction) {
       interaction.editReply({
         content: `Set <@${user.id}>'s status to \"${status}\".`,
       });
+      sendLog({
+        content: `<@${interaction.user.id}> manually set <@${user.id}>'s status to \"${status}\".`,
+      });
     })
     .catch(() => {
       interaction.editReply({
@@ -110,7 +114,16 @@ async function statusResetAll(interaction: ChatInputCommandInteraction) {
     content: `Cleared ${deleteResult.deletedCount} eliminated ${
       deleteResult.deletedCount === 1 ? "player" : "players"
     } from the tournament, and reset ${updateResult.modifiedCount} ${
-      updateResult.modifiedCount === 1 ? "participants" : "participants"
-    } to the status \"not started\"`,
+      updateResult.modifiedCount === 1 ? "participant" : "participants"
+    } to the status \"not started\".`,
+  });
+  sendLog({
+    content: `<@${interaction.user.id}> cleared ${
+      deleteResult.deletedCount
+    } eliminated ${
+      deleteResult.deletedCount === 1 ? "player" : "players"
+    } from the tournament, and reset ${updateResult.modifiedCount} ${
+      updateResult.modifiedCount === 1 ? "participant" : "participants"
+    } to the status \"not started\".`,
   });
 }

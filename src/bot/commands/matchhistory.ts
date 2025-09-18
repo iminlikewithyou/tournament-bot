@@ -7,6 +7,7 @@ import { config } from "../../config.js";
 import Participant from "../../models/Participant.js";
 import { Match } from "../../types/Match.js";
 import { getMatchText } from "../../tournament/getMatchText.js";
+import { sendLog } from "../sendLog.js";
 
 export const data = new SlashCommandBuilder()
   .setName("matchhistory")
@@ -60,5 +61,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const finalText = matchTexts.join("\n");
   interaction.editReply({
     content: finalText,
+  });
+  sendLog({
+    content: `<@${interaction.user.id}> requested <@${user.id}>'s match history.`,
+    flags: MessageFlags.SuppressNotifications,
   });
 }

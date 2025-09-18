@@ -1,10 +1,10 @@
 import { TextChannel } from "discord.js";
 import { config } from "../config.js";
-import Participant from "../models/Participant.js";
 import { getMatchDetails } from "../tournament/getMatchDetails.js";
+import { getMatchText } from "../tournament/getMatchText.js";
 import { CompletedMatch, OngoingMatch } from "../types/Match.js";
 import { client } from "./client.js";
-import { getMatchText } from "../tournament/getMatchText.js";
+import { sendLog } from "./sendLog.js";
 
 export async function logGameCreated(match: OngoingMatch) {
   const { participants, participantsPlayingWrongMatch, ignore, invalid } =
@@ -46,9 +46,7 @@ export async function logGameCreated(match: OngoingMatch) {
     .map((participant) => `<@${participant.discordId}>`)
     .join(", ");
 
-  (
-    client.channels.cache.get(config.discord.gameLogChannel) as TextChannel
-  ).send({
+  sendLog({
     content: `${mentions} ${
       participants.length === 1 ? "has" : "have"
     } started their match.`,
@@ -86,9 +84,7 @@ export async function logGameCompleted(match: CompletedMatch) {
     .map((participant) => `<@${participant.discordId}>`)
     .join(", ");
 
-  (
-    client.channels.cache.get(config.discord.gameLogChannel) as TextChannel
-  ).send({
+  sendLog({
     content:
       `${mentions} ${
         participants.length === 1 ? "has" : "have"

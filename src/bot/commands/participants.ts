@@ -6,6 +6,7 @@ import {
 import { getUser } from "../../api/roblox/UsersV1.js";
 import Participant from "../../models/Participant.js";
 import { client } from "../client.js";
+import { sendLog } from "../sendLog.js";
 
 export const data = new SlashCommandBuilder()
   .setName("participants")
@@ -124,6 +125,9 @@ async function participantsAdd(interaction: ChatInputCommandInteraction) {
       interaction.editReply({
         content: `Successfully added <@${discordUser.id}> to the tournament.`,
       });
+      sendLog({
+        content: `<@${interaction.user.id}> manually added <@${discordUser.id}> to the tournament.`,
+      });
     })
     .catch(() => {
       interaction.editReply({
@@ -149,6 +153,9 @@ async function participantsRemove(interaction: ChatInputCommandInteraction) {
       interaction.editReply({
         content: `Removed <@${user.id}> from the tournament.`,
       });
+      sendLog({
+        content: `<@${interaction.user.id}> removed <@${user.id}> from the tournament.`,
+      });
     })
     .catch(() => {
       interaction.editReply({
@@ -166,6 +173,13 @@ async function participantsClearEliminated(
     .then((result) => {
       interaction.editReply({
         content: `Cleared ${result.deletedCount} eliminated ${
+          result.deletedCount === 1 ? "player" : "players"
+        } from the tournament.`,
+      });
+      sendLog({
+        content: `<@${interaction.user.id}> cleared <@${
+          result.deletedCount
+        }> eliminated ${
           result.deletedCount === 1 ? "player" : "players"
         } from the tournament.`,
       });

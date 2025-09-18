@@ -1,12 +1,16 @@
 import {
   ChatInputCommandInteraction,
+  Message,
   MessageFlags,
   SlashCommandBuilder,
   TextChannel,
 } from "discord.js";
-import { getRegistrationMessage } from "../../models/RegistrationMessage.js";
+import RegistrationMessage, {
+  getRegistrationMessage,
+} from "../../models/RegistrationMessage.js";
 import { client } from "../client.js";
 import { config } from "../../config.js";
+import { sendLog } from "../sendLog.js";
 
 export const data = new SlashCommandBuilder()
   .setName("registration")
@@ -36,13 +40,17 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     ? registrationChannel.messages.cache.get(registrationMessageData.message)
     : undefined;
   const subcommand = interaction.options.getSubcommand(true);
+
+  let message: Message;
+  let type: "open" | "closed";
   if (subcommand === "open") {
     if (registrationMessageData?.type === "open") {
       interaction.editReply({ content: "Registration is already open." });
       return;
     }
-    await registrationMessage?.delete();
-    await registrationChannel.send({
+
+    type = "open";
+    message = await registrationChannel.send({
       content:
         "**Registration is now open**!\n" +
         "Users who have linked their Roblox account to Discord using Bloxlink can press the button below to join the event.\n" +
@@ -72,16 +80,41 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         },
       ],
     });
+
     interaction.editReply({ content: "Registration is now open." });
+    sendLog({
+      content: `<@${interaction.user.id}> opened registration.`,
+    });
   } else if (subcommand === "close") {
     if (registrationMessageData?.type === "closed") {
       interaction.editReply({ content: "Registration is already closed." });
       return;
     }
-    await registrationMessage?.delete();
-    registrationChannel.send({
+
+    type = "closed";
+    message = await registrationChannel.send({
       content: "Registration is now closed.",
     });
+
     interaction.editReply({ content: "Registration is now closed." });
+    sendLog({
+      content: `<@${interaction.user.id}> closed registration.`,
+    });
+  } else {
+    return;
+  }
+
+  registrationMessage?.delete();
+  if (!registrationMessageData) {
+    RegistrationMessage.create({
+      type,
+      channel: config.discord.registrationChannel,
+      message: message.id,
+    });
+  } else {
+    registrationMessageData.type = type;
+    registrationMessageData.channel = config.discord.registrationChannel;
+    registrationMessageData.message = message.id;
+    registrationMessageData.save();
   }
 }
