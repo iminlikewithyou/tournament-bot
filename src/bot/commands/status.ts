@@ -37,9 +37,9 @@ export const data = new SlashCommandBuilder()
   )
   .addSubcommand((subcommand) =>
     subcommand
-      .setName("resetall")
+      .setName("reset")
       .setDescription(
-        'Clear eliminated players from the participant list, and reset all players to "not started"'
+        'Resets all players\' status to "not started". Make sure to remove any eliminated players first!'
       )
   );
 
@@ -50,8 +50,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     await statusList(interaction);
   } else if (subcommand === "set") {
     await statusSet(interaction);
-  } else if (subcommand === "resetall") {
-    await statusResetAll(interaction);
+  } else if (subcommand === "reset") {
+    await statusReset(interaction);
   }
 }
 
@@ -100,10 +100,10 @@ async function statusSet(interaction: ChatInputCommandInteraction) {
     });
 }
 
-async function statusResetAll(interaction: ChatInputCommandInteraction) {
-  const deleteResult = await Participant.deleteMany({
-    status: "eliminated",
-  });
+async function statusReset(interaction: ChatInputCommandInteraction) {
+  // const deleteResult = await Participant.deleteMany({
+  //   status: "eliminated",
+  // });
   const updateResult = await Participant.updateMany(
     {},
     {
@@ -111,18 +111,12 @@ async function statusResetAll(interaction: ChatInputCommandInteraction) {
     }
   );
   interaction.editReply({
-    content: `Cleared ${deleteResult.deletedCount} eliminated ${
-      deleteResult.deletedCount === 1 ? "player" : "players"
-    } from the tournament, and reset ${updateResult.modifiedCount} ${
+    content: `Reset ${updateResult.modifiedCount} ${
       updateResult.modifiedCount === 1 ? "participant" : "participants"
     } to the status \"not started\".`,
   });
   sendLog({
-    content: `<@${interaction.user.id}> cleared ${
-      deleteResult.deletedCount
-    } eliminated ${
-      deleteResult.deletedCount === 1 ? "player" : "players"
-    } from the tournament, and reset ${updateResult.modifiedCount} ${
+    content: `<@${interaction.user.id}> reset ${updateResult.modifiedCount} ${
       updateResult.modifiedCount === 1 ? "participant" : "participants"
     } to the status \"not started\".`,
   });
