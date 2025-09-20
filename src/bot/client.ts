@@ -2,7 +2,11 @@ import { Client, Events, GatewayIntentBits } from "discord.js";
 import { config } from "../config.js";
 
 export const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMembers,
+  ],
   allowedMentions: { parse: [] },
 });
 

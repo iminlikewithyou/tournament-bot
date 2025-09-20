@@ -18,6 +18,11 @@ export const data = new SlashCommandBuilder()
   )
   .addSubcommand((subcommand) =>
     subcommand
+      .setName("mentions")
+      .setDescription("List all the participants Discord mentions")
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
       .setName("add")
       .setDescription("Manually add a new participant to the tournament")
       .addUserOption((option) =>
@@ -55,6 +60,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const subcommand = interaction.options.getSubcommand(true);
   if (subcommand === "list") {
     await participantsList(interaction);
+  } else if (subcommand === "mentions") {
+    await participantsMentions(interaction);
   } else if (subcommand === "add") {
     await participantsAdd(interaction);
   } else if (subcommand === "remove") {
@@ -81,12 +88,24 @@ async function participantsList(interaction: ChatInputCommandInteraction) {
           //     : `${participant.robloxDisplayName} • \\@${participant.robloxUsername}`;
           const discordNameDisplay = `\\@${discordUser?.username}`;
           const robloxNameDisplay = `\\@${participant.robloxUsername}`;
-          if (discordNameDisplay === robloxNameDisplay) {
-            return discordNameDisplay;
+          if (
+            discordNameDisplay.toLowerCase() === robloxNameDisplay.toLowerCase()
+          ) {
+            return robloxNameDisplay;
           }
           return `${discordNameDisplay} | ${robloxNameDisplay}`;
         })
         .join("\n") || "No participants.",
+  });
+}
+
+async function participantsMentions(interaction: ChatInputCommandInteraction) {
+  const participants = await Participant.find({});
+  interaction.editReply({
+    content:
+      participants
+        .map((participant) => `<@${participant.discordId}>`)
+        .join(" ") || "No participants.",
   });
 }
 
