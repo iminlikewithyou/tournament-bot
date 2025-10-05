@@ -4,7 +4,7 @@ import { getMatchDetails } from "../tournament/getMatchDetails.js";
 import { getMatchText } from "../tournament/getMatchText.js";
 import { CompletedMatch, OngoingMatch } from "../types/Match.js";
 import { client } from "./client.js";
-import { sendLog } from "./sendLog.js";
+import { sendFeed, sendLog } from "./sendLog.js";
 
 export async function logGameCreated(match: OngoingMatch) {
   const { participants, participantsPlayingWrongMatch, ignore, invalid } =
@@ -12,34 +12,37 @@ export async function logGameCreated(match: OngoingMatch) {
 
   if (ignore) return;
 
+  const saves = [];
+
   if (invalid) {
     for (const participant of participantsPlayingWrongMatch) {
       participant.status = "wrong match";
-      await participant.save();
+      participant.joinCode = match.joinCode;
+      saves.push(participant.save());
     }
     const wrongMentions = participantsPlayingWrongMatch
       .map((participant) => `<@${participant.discordId}>`)
       .join(", ");
-    (
-      client.channels.cache.get(config.discord.gameLogChannel) as TextChannel
-    ).send({
+    sendLog({
       content:
         `${wrongMentions} ${
           participantsPlayingWrongMatch.length === 1 ? "is" : "are"
         } playing the wrong match. ${invalid}\n` + (await getMatchText(match)),
     });
+    await Promise.all(saves);
     return;
   }
 
   for (const participant of participants) {
     if (
-      participant.status === "eliminated" ||
+      participant.status === "lost match" ||
       participant.status === "won match"
     ) {
       continue;
     }
     participant.status = "in match";
-    participant.save();
+    participant.joinCode = match.joinCode;
+    saves.push(participant.save());
   }
 
   const mentions = participants
@@ -51,6 +54,8 @@ export async function logGameCreated(match: OngoingMatch) {
       participants.length === 1 ? "has" : "have"
     } started their match.`,
   });
+
+  await Promise.all(saves);
 }
 
 export async function logGameCompleted(match: CompletedMatch) {
@@ -58,9 +63,11 @@ export async function logGameCompleted(match: CompletedMatch) {
 
   if (ignore || invalid) return;
 
+  const saves = [];
+
   for (const participant of participants) {
     if (
-      participant.status === "eliminated" ||
+      participant.status === "lost match" ||
       participant.status === "won match"
     ) {
       continue;
@@ -74,14 +81,36 @@ export async function logGameCompleted(match: CompletedMatch) {
     if (matchPlayer.position === 1) {
       participant.status = "won match";
     } else {
-      participant.status = "eliminated";
+      participant.status = "lost match";
     }
+    participant.joinCode = undefined;
 
-    await participant.save();
+    saves.push(participant.save());
   }
 
   const mentions = participants
     .map((participant) => `<@${participant.discordId}>`)
+    .join(", ");
+
+  const winners = match.players
+    .filter((player) => player.position === 1)
+    .map(
+      (player) =>
+        `<@${
+          participants.find((participant) => participant.robloxId === player.id)
+            ?.discordId
+        }>`
+    )
+    .join(", ");
+  const losers = match.players
+    .filter((player) => player.position !== 1)
+    .map(
+      (player) =>
+        `<@${
+          participants.find((participant) => participant.robloxId === player.id)
+            ?.discordId
+        }>`
+    )
     .join(", ");
 
   sendLog({
@@ -90,4 +119,9 @@ export async function logGameCompleted(match: CompletedMatch) {
         participants.length === 1 ? "has" : "have"
       } completed their match.\n` + (await getMatchText(match)),
   });
+  sendFeed({
+    content: `- 🏆 ${winners} has won their match against ${losers}!`,
+  });
+
+  await Promise.all(saves);
 }

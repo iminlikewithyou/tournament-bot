@@ -10,6 +10,7 @@ type ServerType = "standard" | "private" | "reserved";
 
 interface BaseMatch {
   id: string;
+  joinCode: string;
   startTime: number;
   serverType: ServerType;
   expiresAt: Date;

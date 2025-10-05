@@ -3,9 +3,16 @@ import {
   MessageFlags,
   SlashCommandBuilder,
 } from "discord.js";
-import Participant, { ParticipantStatus } from "../../models/Participant.js";
-import { client } from "../client.js";
+import { config } from "../../config.js";
+import Participant, {
+  IParticipant,
+  ParticipantStatus,
+  StatusEmoji,
+} from "../../models/Participant.js";
+import { SavedMessageManager } from "../../models/SavedMessage.js";
 import { sendLog } from "../sendLog.js";
+import { getParticipantMentionDisplay } from "../utils/members.js";
+import { createGameLink } from "../utils/gameLink.js";
 
 export const data = new SlashCommandBuilder()
   .setName("status")
@@ -30,7 +37,7 @@ export const data = new SlashCommandBuilder()
           .setChoices([
             { name: "not started", value: "not started" },
             { name: "won match", value: "won match" },
-            { name: "eliminated", value: "eliminated" },
+            { name: "lost match", value: "lost match" },
           ])
           .setRequired(true)
       )
@@ -39,7 +46,7 @@ export const data = new SlashCommandBuilder()
     subcommand
       .setName("reset")
       .setDescription(
-        'Resets all players\' status to "not started". Make sure to remove any eliminated players first!'
+        'Resets all players\' status to "not started". »» Make sure to remove any eliminated players first! ««'
       )
   );
 
@@ -55,18 +62,55 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   }
 }
 
-async function statusList(interaction: ChatInputCommandInteraction) {
+export async function getStatusList() {
   const participants = await Participant.find({});
-  participants.sort((a, b) => a.status.localeCompare(b.status));
+
+  const statusOrder = Object.keys(StatusEmoji);
+  const participantsByStatus = Object.entries(
+    participants.reduce((acc, participant) => {
+      const status = participant.status;
+      if (!acc[status]) {
+        acc[status] = [];
+      }
+      acc[status].push(participant);
+      return acc;
+    }, {} as Record<string, IParticipant[]>)
+  ).sort(([a], [b]) => statusOrder.indexOf(a) - statusOrder.indexOf(b));
+
+  return (
+    participantsByStatus
+      .map(([status, participants]) => {
+        const participantList =
+          participants
+            .map((participant) => {
+              const display = `**${status}** • ${getParticipantMentionDisplay(
+                participant.discordId,
+                participant.robloxUsername
+              )}`;
+              const joinLink = participant.joinCode
+                ? ` • [Join](${createGameLink({ id: participant.joinCode })})`
+                : "";
+              return display + joinLink;
+            })
+            .join("\n") || "No participants yet.";
+        return (
+          `## ${StatusEmoji[status as ParticipantStatus]} ${status}\n` +
+          participantList
+        );
+      })
+      .join("\n") || "No participants yet."
+  );
+}
+
+export async function updateStatusList() {
+  SavedMessageManager.update("statusList", config.discord.statusChannel, {
+    content: await getStatusList(),
+  });
+}
+
+async function statusList(interaction: ChatInputCommandInteraction) {
   interaction.editReply({
-    content:
-      participants
-        .map((participant) => {
-          const discordNameDisplay = `<@${participant.discordId}>`;
-          const robloxNameDisplay = `\\@${participant.robloxUsername}`;
-          return `**${participant.status}** • ${discordNameDisplay} | ${robloxNameDisplay}`;
-        })
-        .join("\n") || "No participants.",
+    content: await getStatusList(),
   });
 }
 

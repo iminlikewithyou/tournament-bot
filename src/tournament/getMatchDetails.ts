@@ -8,7 +8,7 @@ export async function getMatchDetails(match: Match) {
 
   const participantsPlayingWrongMatch = participants.filter(
     (participant) =>
-      participant.status !== "won match" && participant.status !== "eliminated"
+      participant.status !== "won match" && participant.status !== "lost match"
   );
 
   const result = {

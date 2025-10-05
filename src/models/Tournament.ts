@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
-type TournamentState = "not started" | "recruiting" | "in progress";
+export type TournamentState = "reset" | "recruiting" | "in progress";
 
 interface ITournament {
   state: TournamentState;
@@ -9,12 +9,12 @@ interface ITournament {
 const TournamentSchema = new Schema<ITournament>({
   state: {
     type: String,
-    enum: ["not started", "recruiting", "in progress"],
-    default: "not started",
+    enum: ["reset", "recruiting", "in progress"],
+    default: "reset",
   },
 });
 
-const Tournament = mongoose.model<ITournament>("Tournament", TournamentSchema);
+const Tournament = mongoose.model("Tournament", TournamentSchema);
 
 export async function getTournament() {
   let instance = await Tournament.findOne({});

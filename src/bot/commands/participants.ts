@@ -7,6 +7,7 @@ import { getUser } from "../../api/roblox/UsersV1.js";
 import Participant from "../../models/Participant.js";
 import { client } from "../client.js";
 import { sendLog } from "../sendLog.js";
+import { getParticipantDisplayName } from "../utils/members.js";
 
 export const data = new SlashCommandBuilder()
   .setName("participants")
@@ -48,11 +49,6 @@ export const data = new SlashCommandBuilder()
           .setDescription("The user to remove")
           .setRequired(true)
       )
-  )
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName("cleareliminated")
-      .setDescription("Remove all eliminated players from the participant list")
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
@@ -66,36 +62,23 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     await participantsAdd(interaction);
   } else if (subcommand === "remove") {
     await participantsRemove(interaction);
-  } else if (subcommand === "cleareliminated") {
-    await participantsClearEliminated(interaction);
   }
 }
 
 async function participantsList(interaction: ChatInputCommandInteraction) {
   const participants = await Participant.find({});
+
+  const displayNames = await Promise.all(
+    participants.map(async (participant) => {
+      return getParticipantDisplayName(
+        participant.discordId,
+        participant.robloxUsername
+      ).then((name) => name ?? `Unknown member (<@${participant.discordId}>)`);
+    })
+  );
+
   interaction.editReply({
-    content:
-      participants
-        .map((participant) => {
-          const discordUser = client.users.cache.get(participant.discordId);
-          // const discordNameDisplay =
-          //   discordUser?.displayName === discordUser?.username
-          //     ? `\\@${discordUser?.username}`
-          //     : `${discordUser?.displayName} • \\@${discordUser?.username}`;
-          // const robloxNameDisplay =
-          //   participant.robloxUsername === participant.robloxDisplayName
-          //     ? `\\@${participant.robloxUsername}`
-          //     : `${participant.robloxDisplayName} • \\@${participant.robloxUsername}`;
-          const discordNameDisplay = `\\@${discordUser?.username}`;
-          const robloxNameDisplay = `\\@${participant.robloxUsername}`;
-          if (
-            discordNameDisplay.toLowerCase() === robloxNameDisplay.toLowerCase()
-          ) {
-            return robloxNameDisplay;
-          }
-          return `${discordNameDisplay} | ${robloxNameDisplay}`;
-        })
-        .join("\n") || "No participants.",
+    content: displayNames.join("\n") || "No participants yet.",
   });
 }
 
@@ -104,7 +87,7 @@ async function participantsMentions(interaction: ChatInputCommandInteraction) {
   interaction.editReply({
     content:
       participants
-        .map((participant) => `<@${participant.discordId}>`)
+        .map((participant) => `\\<@${participant.discordId}>`)
         .join(" ") || "No participants.",
   });
 }
@@ -176,29 +159,29 @@ async function participantsRemove(interaction: ChatInputCommandInteraction) {
     });
 }
 
-async function participantsClearEliminated(
-  interaction: ChatInputCommandInteraction
-) {
-  Participant.deleteMany({
-    status: "eliminated",
-  })
-    .then((result) => {
-      interaction.editReply({
-        content: `Cleared ${result.deletedCount} eliminated ${
-          result.deletedCount === 1 ? "player" : "players"
-        } from the tournament.`,
-      });
-      sendLog({
-        content: `<@${interaction.user.id}> cleared ${
-          result.deletedCount
-        } eliminated ${
-          result.deletedCount === 1 ? "player" : "players"
-        } from the tournament.`,
-      });
-    })
-    .catch(() => {
-      interaction.editReply({
-        content: `Failed to clear eliminated players from the tournament.`,
-      });
-    });
-}
+// async function participantsClearEliminated(
+//   interaction: ChatInputCommandInteraction
+// ) {
+//   Participant.deleteMany({
+//     status: "lost match",
+//   })
+//     .then((result) => {
+//       interaction.editReply({
+//         content: `Cleared ${result.deletedCount} eliminated ${
+//           result.deletedCount === 1 ? "player" : "players"
+//         } from the tournament.`,
+//       });
+//       sendLog({
+//         content: `<@${interaction.user.id}> cleared ${
+//           result.deletedCount
+//         } eliminated ${
+//           result.deletedCount === 1 ? "player" : "players"
+//         } from the tournament.`,
+//       });
+//     })
+//     .catch(() => {
+//       interaction.editReply({
+//         content: `Failed to clear eliminated players from the tournament.`,
+//       });
+//     });
+// }

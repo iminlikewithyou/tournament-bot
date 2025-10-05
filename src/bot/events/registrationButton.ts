@@ -3,15 +3,15 @@ import { client } from "../client.js";
 import Participant from "../../models/Participant.js";
 import { discordToRoblox } from "../../api/bloxlink/discordToRoblox.js";
 import { getUser } from "../../api/roblox/UsersV1.js";
-import { getRegistrationMessage } from "../../models/RegistrationMessage.js";
 import { sendLog } from "../sendLog.js";
+import { getTournament } from "../../models/Tournament.js";
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton()) return;
   if (interaction.customId !== "register") return;
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-  if ((await getRegistrationMessage())?.type !== "open") {
+  if ((await getTournament()).state !== "recruiting") {
     interaction.editReply({
       content: "Registration is no longer open.",
     });
@@ -36,7 +36,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     return;
   } else if (discordToRobloxResponse.status === "notFound") {
     interaction.editReply({
-      content: `Your Discord account doesn't have Bloxlink setup!\nYou can link your Discord account with Bloxlink using [this link](https://blox.link/dashboard/user/verifications/verify).`,
+      content: `Your Discord account doesn't have Bloxlink set up!\nYou can link your Discord account with Bloxlink using [this link](https://blox.link/dashboard/user/verifications/verify).`,
     });
     return;
   }
